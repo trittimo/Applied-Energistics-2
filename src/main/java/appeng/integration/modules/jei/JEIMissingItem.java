@@ -47,7 +47,7 @@ public class JEIMissingItem implements IRecipeTransferError {
     JEIMissingItem(Container container, @Nonnull IRecipeLayout recipeLayout) {
         if (container instanceof ContainerMEMonitorable) {
             IItemList<IAEItemStack> ir = ((ContainerMEMonitorable) container).items;
-            
+
             IItemList<IAEItemStack> available = mergeInventories(ir, (ContainerMEMonitorable) container);
 
             boolean found;
@@ -57,7 +57,7 @@ public class JEIMissingItem implements IRecipeTransferError {
             IItemList<IAEItemStack> used = AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class).createList();
             for (IGuiIngredient<?> i : recipeLayout.getItemStacks().getGuiIngredients().values()) {
                 found = false;
-                if (i.isInput() && i.getAllIngredients().size() > 0) {
+                if (i.isInput() && !i.getAllIngredients().isEmpty()) {
                     List<?> allIngredients = i.getAllIngredients();
                     for (Object allIngredient : allIngredients) {
                         if (allIngredient instanceof ItemStack) {
@@ -66,7 +66,7 @@ public class JEIMissingItem implements IRecipeTransferError {
                                 IAEItemStack search = AEItemStack.fromItemStack(stack);
                                 if (stack.getItem().isDamageable() || Platform.isGTDamageableItem(stack.getItem())) {
                                     Collection<IAEItemStack> fuzzy = available.findFuzzy(search, FuzzyMode.IGNORE_ALL);
-                                    if (fuzzy.size() > 0) {
+                                    if (!fuzzy.isEmpty()) {
                                         for (IAEItemStack itemStack : fuzzy) {
                                             if (itemStack.getStackSize() > 0) {
                                                 if (Platform.isGTDamageableItem(stack.getItem())) {
@@ -145,7 +145,7 @@ public class JEIMissingItem implements IRecipeTransferError {
             for (IGuiIngredient<?> i : recipeLayout.getItemStacks().getGuiIngredients().values()) {
                 found = false;
                 craftable = false;
-                ArrayList<ItemStack> valid = new ArrayList<>();
+                IItemList<IAEItemStack> valid = AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class).createList();
                 if (i.isInput()) {
                     List<?> allIngredients = i.getAllIngredients();
                     for (Object allIngredient : allIngredients) {
@@ -155,7 +155,7 @@ public class JEIMissingItem implements IRecipeTransferError {
                                 IAEItemStack search = AEItemStack.fromItemStack(stack);
                                 if (stack.getItem().isDamageable() || Platform.isGTDamageableItem(stack.getItem())) {
                                     Collection<IAEItemStack> fuzzy = available.findFuzzy(search, FuzzyMode.IGNORE_ALL);
-                                    if (fuzzy.size() > 0) {
+                                    if (!fuzzy.isEmpty()) {
                                         for (IAEItemStack itemStack : fuzzy) {
                                             if (itemStack.getStackSize() > 0) {
                                                 if (Platform.isGTDamageableItem(stack.getItem())) {
@@ -165,7 +165,7 @@ public class JEIMissingItem implements IRecipeTransferError {
                                                 }
                                                 found = true;
                                                 used.add(itemStack.copy().setStackSize(1));
-                                                valid.add(itemStack.copy().setStackSize(1).createItemStack());
+                                                valid.add(itemStack.copy().setStackSize(1));
                                             } else {
                                                 if (itemStack.isCraftable()) {
                                                     craftable = true;
@@ -180,12 +180,12 @@ public class JEIMissingItem implements IRecipeTransferError {
                                         if (ext.getStackSize() > 0 && (usedStack == null || usedStack.getStackSize() < ext.getStackSize())) {
                                             used.add(ext.copy().setStackSize(1));
                                             if (craftable) {
-                                                valid.clear();
+                                                valid = null;
                                             }
-                                            valid.add(ext.copy().setStackSize(1).createItemStack());
+                                            valid.add(ext.copy().setStackSize(1));
                                             found = true;
                                         } else if (ext.isCraftable()) {
-                                            valid.add(ext.copy().setStackSize(1).createItemStack());
+                                            valid.add(ext.copy().setStackSize(1));
                                             craftable = true;
                                         }
                                     }
@@ -195,21 +195,29 @@ public class JEIMissingItem implements IRecipeTransferError {
                             }
                         }
                     }
-                    if (i.getAllIngredients().size() == 0) {
+                    if (i.getAllIngredients().isEmpty()) {
                         found = true;
+                    }
+                    ArrayList<ItemStack> validStacks = new ArrayList<>();
+                    if (valid != null) {
+                        valid.forEach(v -> {
+                            ItemStack validStack = v.createItemStack();
+                            validStack.setCount(1);
+                            validStacks.add(validStack);
+                        });
                     }
                     if (!found) {
                         if (craftable) {
                             i.drawHighlight(minecraft, new Color(0.0f, 0.0f, 1.0f, 0.4f), recipeX, recipeY);
                             this.craftableSlots.add(currentSlot);
-                            recipeLayout.getItemStacks().set(currentSlot, valid);
+                            recipeLayout.getItemStacks().set(currentSlot, validStacks);
                         } else {
                             i.drawHighlight(minecraft, new Color(1.0f, 0.0f, 0.0f, 0.4f), recipeX, recipeY);
                         }
                         this.errored = true;
                     } else {
                         this.foundSlots.add(currentSlot);
-                        recipeLayout.getItemStacks().set(currentSlot, valid);
+                        recipeLayout.getItemStacks().set(currentSlot, validStacks);
                     }
                 }
                 currentSlot++;

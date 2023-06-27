@@ -207,6 +207,14 @@ public class CraftingTreeProcess {
             if (this.details.isCraftable() && stack.getItem().hasContainerItem(stack.getDefinition())) {
                 final ItemStack is = Platform.getContainerItem(stack.createItemStack());
                 final IAEItemStack o = AEItemStack.fromItemStack(is);
+
+                //if the container item is a identical copy or a damageable one, return it immediately.
+                //if it is not it will need to be recrafted
+                if (stack.equals(is) || is.getItem().isDamageable() || Platform.isGTDamageableItem(is.getItem())){
+                    inv.injectItems(o, Actionable.MODULATE, src);
+                    this.bytes++;
+                    continue;
+                }
                 if (o != null) {
                     if (containerItems == null) {
                         containerItems = new ArrayList<>();

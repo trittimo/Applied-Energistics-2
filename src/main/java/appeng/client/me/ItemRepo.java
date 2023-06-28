@@ -251,10 +251,8 @@ public class ItemRepo {
             if (needsZeroCopy) {
                 is = is.copy();
                 is.setStackSize(0);
-                this.view.add(is);
-            } else if (is.getStackSize() > 0) {
-                this.view.add(is);
             }
+            this.view.add(is);
         }
     }
 

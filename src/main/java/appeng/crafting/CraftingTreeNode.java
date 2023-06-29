@@ -32,9 +32,10 @@ import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketInformPlayer;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import appeng.util.Platform;
+import appeng.util.item.AEItemStack;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.Optional;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -137,13 +138,23 @@ public class CraftingTreeNode {
             }
 
             for (IAEItemStack fuzz : itemList) {
-                if (this.parent.details.isValidItemForSlot(this.getSlot(), fuzz.copy().getCachedItemStack(1), this.world)) {
+                if (this.parent.details.isValidItemForSlot(this.getSlot(), fuzz.getDefinition(), this.world)) {
                     fuzz = fuzz.copy();
                     fuzz.setStackSize(l);
 
                     final IAEItemStack available = inv.extractItems(fuzz, Actionable.MODULATE, src);
 
                     if (available != null) {
+
+                        if (available.getItem().hasContainerItem(available.getDefinition())) {
+                            final ItemStack is2 = Platform.getContainerItem(available.createItemStack());
+                            final IAEItemStack o = AEItemStack.fromItemStack(is2);
+
+                            if (o != null) {
+                                this.parent.addContainers(o);
+                            }
+                        }
+
                         if (!this.exhausted) {
                             final IAEItemStack is = this.job.checkUse(available);
 
@@ -197,6 +208,16 @@ public class CraftingTreeNode {
                 final IAEItemStack available = inv.extractItems(madeWhat, Actionable.MODULATE, src);
 
                 if (available != null) {
+
+                    if (parent != null && available.getItem().hasContainerItem(available.getDefinition())) {
+                        final ItemStack is2 = Platform.getContainerItem(available.createItemStack());
+                        final IAEItemStack o = AEItemStack.fromItemStack(is2);
+
+                        if (o != null) {
+                            this.parent.addContainers(o);
+                        }
+                    }
+
                     this.bytes += available.getStackSize();
                     l -= available.getStackSize();
 
@@ -234,6 +255,17 @@ public class CraftingTreeNode {
                     }
                 } catch (final CraftBranchFailure fail) {
                     pro.possible = true;
+                }
+            }
+        }
+
+        if (this.parent != null) {
+            if (what.getItem().hasContainerItem(what.createItemStack())) {
+                final ItemStack is2 = Platform.getContainerItem(what.copy().setStackSize(1).createItemStack());
+                final IAEItemStack o = AEItemStack.fromItemStack(is2);
+
+                if (o != null) {
+                    this.parent.addContainers(o);
                 }
             }
         }

@@ -40,6 +40,7 @@ import net.minecraft.world.World;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 public class CraftingTreeNode {
@@ -112,14 +113,16 @@ public class CraftingTreeNode {
         this.what.setStackSize(l);
 
         if (this.getSlot() >= 0 && this.parent != null && this.parent.details.isCraftable()) {
-            Collection<IAEItemStack> itemList = new ArrayList<>();
+            LinkedList<IAEItemStack> itemList = new LinkedList<>();
 
             boolean damageableItem = this.what.getItem().isDamageable() || Platform.isGTDamageableItem(this.what.getItem());
 
             if (this.parent.details.canSubstitute()) {
                 for (IAEItemStack subs : this.parent.details.getSubstituteInputs(this.slot)) {
                     if (damageableItem) {
-                        itemList.addAll(inventoryList.findFuzzy(subs, FuzzyMode.IGNORE_ALL));
+                        for (IAEItemStack i : inventoryList.findFuzzy(subs, FuzzyMode.IGNORE_ALL)) {
+                            itemList.add(i);
+                        }
                     }
                     subs = inventoryList.findPrecise(subs);
                     if (subs != null) {
@@ -128,7 +131,9 @@ public class CraftingTreeNode {
                 }
             } else {
                 if (damageableItem) {
-                    itemList.addAll(inventoryList.findFuzzy(this.what, FuzzyMode.IGNORE_ALL));
+                    for (IAEItemStack i : inventoryList.findFuzzy(this.what, FuzzyMode.IGNORE_ALL)) {
+                        itemList.add(i);
+                    }
                 } else {
                     final IAEItemStack item = inventoryList.findPrecise(this.what);
                     if (item != null) {

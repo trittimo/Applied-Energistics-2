@@ -26,6 +26,8 @@ import appeng.api.storage.data.IAEItemStack;
 import appeng.container.ContainerNull;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
+import appeng.util.item.OreHelper;
+import appeng.util.item.OreReference;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -37,6 +39,8 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.crafting.IShapedRecipe;
+import net.minecraftforge.oredict.OreDictionary;
+import net.minecraftforge.oredict.ShapedOreRecipe;
 
 import java.util.*;
 
@@ -234,6 +238,22 @@ public class PatternHelper implements ICraftingPatternDetails, Comparable<Patter
         // If we cannot substitute, the items must match exactly
         if ((!(i.getItem().isDamageable() || Platform.isGTDamageableItem(i.getItem())) && !canSubstitute) && slotIndex < inputs.length) {
             if (!inputs[slotIndex].isSameType(i)) {
+                this.markItemAs(slotIndex, i, TestStatus.DECLINE);
+                return false;
+            }
+        }
+
+
+        if (this.standardRecipe instanceof ShapedOreRecipe) {
+            final OreReference aOR = OreHelper.INSTANCE.getOre(this.crafting.getStackInSlot(slotIndex)).orElse(null);
+            if (aOR != null) {
+                final OreReference bOR = OreHelper.INSTANCE.getOre(i).orElse(null);
+
+                if (OreHelper.INSTANCE.sameOre(aOR, bOR)) {
+                    this.markItemAs(slotIndex, i, TestStatus.ACCEPT);
+                    return true;
+                }
+
                 this.markItemAs(slotIndex, i, TestStatus.DECLINE);
                 return false;
             }

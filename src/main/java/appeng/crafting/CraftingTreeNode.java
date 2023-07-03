@@ -39,7 +39,6 @@ import net.minecraft.world.World;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -143,6 +142,9 @@ public class CraftingTreeNode {
             }
 
             for (IAEItemStack fuzz : itemList) {
+                if (fuzz.getStackSize() == 0) {
+                    continue;
+                }
                 if (this.parent.details.isValidItemForSlot(this.getSlot(), fuzz.getDefinition(), this.world)) {
                     fuzz = fuzz.copy();
                     fuzz.setStackSize(l);
@@ -150,7 +152,6 @@ public class CraftingTreeNode {
                     final IAEItemStack available = inv.extractItems(fuzz, Actionable.MODULATE, src);
 
                     if (available != null) {
-
                         if (available.getItem().hasContainerItem(available.getDefinition())) {
                             final ItemStack is2 = Platform.getContainerItem(available.createItemStack());
                             final IAEItemStack o = AEItemStack.fromItemStack(is2);
@@ -264,19 +265,16 @@ public class CraftingTreeNode {
             }
         }
 
-        if (this.parent != null) {
-            if (what.getItem().hasContainerItem(what.createItemStack())) {
-                final ItemStack is2 = Platform.getContainerItem(what.copy().setStackSize(1).createItemStack());
+        if (job.isSimulation()) {
+            this.bytes += l;
+            if (parent != null && this.what.getItem().hasContainerItem(this.what.getDefinition())) {
+                final ItemStack is2 = Platform.getContainerItem(this.what.copy().setStackSize(1).createItemStack());
                 final IAEItemStack o = AEItemStack.fromItemStack(is2);
 
                 if (o != null) {
                     this.parent.addContainers(o);
                 }
             }
-        }
-
-        if (job.isSimulation()) {
-            this.bytes += l;
             this.missing += l;
             final IAEItemStack rv = this.what.copy();
             rv.setStackSize(l);

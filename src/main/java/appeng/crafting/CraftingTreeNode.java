@@ -96,15 +96,6 @@ public class CraftingTreeNode {
     IAEItemStack request(final MECraftingInventory inv, long l, final IActionSource src) throws CraftBranchFailure, InterruptedException {
         addNode();
         this.job.handlePausing();
-        if (this.canEmit) {
-            final IAEItemStack wat = this.what.copy();
-            wat.setStackSize(l);
-
-            this.howManyEmitted = wat.getStackSize();
-            this.bytes += wat.getStackSize();
-
-            return wat;
-        }
 
         final IItemList<IAEItemStack> inventoryList = inv.getItemList();
         final List<IAEItemStack> thingsUsed = new ArrayList<>();
@@ -199,6 +190,16 @@ public class CraftingTreeNode {
                     return available;
                 }
             }
+        }
+
+        if (this.canEmit) {
+            final IAEItemStack wat = this.what.copy();
+            wat.setStackSize(l);
+
+            this.howManyEmitted = wat.getStackSize();
+            this.bytes += wat.getStackSize();
+
+            return wat;
         }
 
         this.exhausted = true;

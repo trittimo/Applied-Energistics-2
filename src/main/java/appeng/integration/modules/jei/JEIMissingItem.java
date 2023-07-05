@@ -2,26 +2,23 @@ package appeng.integration.modules.jei;
 
 import appeng.api.AEApi;
 import appeng.api.config.FuzzyMode;
-import appeng.api.implementations.tiles.ISegmentedInventory;
 import appeng.api.storage.channels.IItemStorageChannel;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IItemList;
-import appeng.client.gui.implementations.GuiCraftingTerm;
-import appeng.client.gui.implementations.GuiWirelessCraftingTerminal;
-import appeng.container.implementations.ContainerCraftingTerm;
 import appeng.container.implementations.ContainerMEMonitorable;
-import appeng.container.implementations.ContainerWirelessCraftingTerminal;
 import appeng.helpers.IContainerCraftingPacket;
-import appeng.util.IConfigManagerHost;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
 import mezz.jei.api.gui.IGuiIngredient;
 import mezz.jei.api.gui.IRecipeLayout;
 import mezz.jei.api.recipe.transfer.IRecipeTransferError;
+import mezz.jei.gui.TooltipRenderer;
 import mezz.jei.gui.recipes.RecipeLayout;
+import mezz.jei.gui.recipes.RecipeTransferButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.text.translation.I18n;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.wrapper.PlayerMainInvWrapper;
 
@@ -115,8 +112,10 @@ public class JEIMissingItem implements IRecipeTransferError {
         if (c instanceof ContainerMEMonitorable) {
             ContainerMEMonitorable container = (ContainerMEMonitorable) c;
             IItemList<IAEItemStack> ir = ((ContainerMEMonitorable) c).items;
-            boolean found;
-            boolean craftable;
+            boolean found = false;
+            boolean foundAny = false;
+            boolean craftable = false;
+            boolean foundAnyCraftable = false;
             int currentSlot = 0;
             this.errored = false;
 
@@ -196,7 +195,8 @@ public class JEIMissingItem implements IRecipeTransferError {
                         }
                     }
                     if (i.getAllIngredients().isEmpty()) {
-                        found = true;
+                        currentSlot++;
+                        continue;
                     }
                     ArrayList<ItemStack> validStacks = new ArrayList<>();
                     if (valid != null) {
@@ -211,19 +211,35 @@ public class JEIMissingItem implements IRecipeTransferError {
                             i.drawHighlight(minecraft, new Color(0.0f, 0.0f, 1.0f, 0.4f), recipeX, recipeY);
                             this.craftableSlots.add(currentSlot);
                             recipeLayout.getItemStacks().set(currentSlot, validStacks);
+                            foundAnyCraftable = true;
                         } else {
                             i.drawHighlight(minecraft, new Color(1.0f, 0.0f, 0.0f, 0.4f), recipeX, recipeY);
                         }
                         this.errored = true;
                     } else {
+                        foundAny = true;
                         this.foundSlots.add(currentSlot);
                         recipeLayout.getItemStacks().set(currentSlot, validStacks);
                     }
                 }
                 currentSlot++;
             }
-            if (!this.errored) {
-                ((RecipeLayout) recipeLayout).getRecipeTransferButton().init(Minecraft.getMinecraft().player.openContainer, Minecraft.getMinecraft().player);
+            RecipeTransferButton b = ((RecipeLayout) recipeLayout).getRecipeTransferButton();
+            if (b != null) {
+                List<String> tooltipLines = new ArrayList<>();
+                b.init(c, minecraft.player);
+                if (errored && foundAny) {
+                    tooltipLines.add(I18n.translateToLocal("gui.tooltips.appliedenergistics2.PartialTransfer"));
+                    b.enabled = true;
+                    b.visible = true;
+                }
+                if (errored) {
+                    tooltipLines.add(I18n.translateToLocal("gui.tooltips.appliedenergistics2.MissingItem"));
+                }
+                if (foundAnyCraftable) {
+                    tooltipLines.add(I18n.translateToLocal("gui.tooltips.appliedenergistics2.CraftableItem"));
+                }
+                TooltipRenderer.drawHoveringText(minecraft, tooltipLines, mouseX, mouseY);
             }
         }
     }

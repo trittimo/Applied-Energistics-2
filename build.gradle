@@ -71,8 +71,8 @@ if (!getFile(targetPackageJava).exists() && !getFile(targetPackageScala).exists(
 }
 
 if (apiPackage) {
-    targetPackageJava = 'src/api/java/' + modGroupPath
-    targetPackageScala = 'src/api/java/' + modGroupPath
+    targetPackageJava = 'src/api/java/' + modGroupPath + '/api'
+    targetPackageScala = 'src/api/java/' + modGroupPath + '/api'
     if (!getFile(targetPackageJava).exists() && !getFile(targetPackageScala).exists()) {
         throw new GradleException("Could not resolve \"apiPackage\"! Could not find ${targetPackageJava} or ${targetPackageScala}")
     }
@@ -439,9 +439,6 @@ processResources {
             rename "(${at})", 'META-INF/$1'
         }
     }
-
-    from sourceSets.api.output
-    dependsOn apiClasses
 }
 
 // Automatically generate a mixin json file if it does not already exist
@@ -516,16 +513,26 @@ jar {
             it.isDirectory() ? it : zipTree(it)
         }
     }
+
+    from sourceSets.api.output
+    dependsOn apiClasses
+
+    // specify which files are really included, can control which APIs should be in
+    include "appeng/**"
+    include "assets/**"
+    include "mcmod.info"
+    include "pack.mcmeta"
+    include "META-INF/appeng_at.cfg"
 }
 
 // Create API library jar
 tasks.register('apiJar', Jar) {
     archiveClassifier.set 'api'
-    from(sourceSets.main.java) {
+    from(sourceSets.api.java) {
         include "${modGroupPath}/${apiPackagePath}/**"
     }
 
-    from(sourceSets.main.output) {
+    from(sourceSets.api.output) {
         include "${modGroupPath}/${apiPackagePath}/**"
     }
 }

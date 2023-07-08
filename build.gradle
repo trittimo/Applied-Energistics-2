@@ -374,8 +374,8 @@ dependencies {
     }
 }
 
-if (getFile('dependencies.gradle').exists()) {
-    apply from: 'dependencies.gradle'
+if (getFile('gradle/scripts/dependencies.gradle').exists()) {
+    apply from: 'gradle/scripts/dependencies.gradle'
 }
 
 apply from: 'gradle/scripts/optional.gradle'

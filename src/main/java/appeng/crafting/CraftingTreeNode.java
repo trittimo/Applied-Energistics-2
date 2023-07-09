@@ -33,12 +33,14 @@ import appeng.core.sync.packets.PacketInformPlayer;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
+import appeng.util.item.MeaningfulItemIterator;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -110,32 +112,37 @@ public class CraftingTreeNode {
             if (this.parent.details.canSubstitute()) {
                 for (IAEItemStack subs : this.parent.details.getSubstituteInputs(this.slot)) {
                     if (damageableItem) {
-                        for (IAEItemStack i : inventoryList.findFuzzy(subs, FuzzyMode.IGNORE_ALL)) {
-                            itemList.add(i);
+                        Iterator<IAEItemStack> it = new MeaningfulItemIterator<>(inventoryList.findFuzzy(this.what, FuzzyMode.IGNORE_ALL));
+                        while (it.hasNext()) {
+                            IAEItemStack i = it.next();
+                            if (i.getStackSize() > 0) {
+                                itemList.add(i);
+                            }
                         }
                     }
                     subs = inventoryList.findPrecise(subs);
-                    if (subs != null) {
+                    if (subs != null && subs.getStackSize() > 0) {
                         itemList.add(subs);
                     }
                 }
             } else {
                 if (damageableItem) {
-                    for (IAEItemStack i : inventoryList.findFuzzy(this.what, FuzzyMode.IGNORE_ALL)) {
-                        itemList.add(i);
+                    Iterator<IAEItemStack> it = new MeaningfulItemIterator<>(inventoryList.findFuzzy(this.what, FuzzyMode.IGNORE_ALL));
+                    while (it.hasNext()) {
+                        IAEItemStack i = it.next();
+                        if (i.getStackSize() > 0) {
+                            itemList.add(i);
+                        }
                     }
                 } else {
                     final IAEItemStack item = inventoryList.findPrecise(this.what);
-                    if (item != null) {
+                    if (item != null && item.getStackSize() > 0) {
                         itemList.add(item);
                     }
                 }
             }
 
             for (IAEItemStack fuzz : itemList) {
-                if (fuzz.getStackSize() == 0) {
-                    continue;
-                }
                 if (this.parent.details.isValidItemForSlot(this.getSlot(), fuzz.getDefinition(), this.world)) {
                     fuzz = fuzz.copy();
                     fuzz.setStackSize(l);

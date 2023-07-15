@@ -522,7 +522,7 @@ jar {
     include "assets/**"
     include "mcmod.info"
     include "pack.mcmeta"
-    include "META-INF/appeng_at.cfg"
+    include "META-INF/appliedenergistics2_at.cfg"
 }
 
 // Create API library jar

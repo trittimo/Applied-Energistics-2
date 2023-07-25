@@ -109,8 +109,7 @@ public class JEIMissingItem implements IRecipeTransferError {
     @Override
     public void showError(Minecraft minecraft, int mouseX, int mouseY, @Nonnull IRecipeLayout recipeLayout, int recipeX, int recipeY) {
         Container c = minecraft.player.openContainer;
-        if (c instanceof ContainerMEMonitorable) {
-            ContainerMEMonitorable container = (ContainerMEMonitorable) c;
+        if (c instanceof ContainerMEMonitorable container) {
             IItemList<IAEItemStack> ir = ((ContainerMEMonitorable) c).items;
             boolean found = false;
             boolean foundAny = false;
@@ -148,8 +147,7 @@ public class JEIMissingItem implements IRecipeTransferError {
                 if (i.isInput()) {
                     List<?> allIngredients = i.getAllIngredients();
                     for (Object allIngredient : allIngredients) {
-                        if (allIngredient instanceof ItemStack) {
-                            ItemStack stack = (ItemStack) allIngredient;
+                        if (allIngredient instanceof ItemStack stack) {
                             if (!stack.isEmpty()) {
                                 IAEItemStack search = AEItemStack.fromItemStack(stack);
                                 if (stack.getItem().isDamageable() || Platform.isGTDamageableItem(stack.getItem())) {
@@ -179,7 +177,7 @@ public class JEIMissingItem implements IRecipeTransferError {
                                         if (ext.getStackSize() > 0 && (usedStack == null || usedStack.getStackSize() < ext.getStackSize())) {
                                             used.add(ext.copy().setStackSize(1));
                                             if (craftable) {
-                                                valid = null;
+                                                valid.resetStatus();
                                             }
                                             valid.add(ext.copy().setStackSize(1));
                                             found = true;
@@ -199,13 +197,13 @@ public class JEIMissingItem implements IRecipeTransferError {
                         continue;
                     }
                     ArrayList<ItemStack> validStacks = new ArrayList<>();
-                    if (valid != null) {
-                        valid.forEach(v -> {
+                    valid.forEach(v -> {
+                        if (v.getStackSize() > 0) {
                             ItemStack validStack = v.createItemStack();
                             validStack.setCount(1);
                             validStacks.add(validStack);
-                        });
-                    }
+                        }
+                    });
                     if (!found) {
                         if (craftable) {
                             i.drawHighlight(minecraft, new Color(0.0f, 0.0f, 1.0f, 0.4f), recipeX, recipeY);

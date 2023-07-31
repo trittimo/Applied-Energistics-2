@@ -77,7 +77,7 @@ public class GridNode implements IGridNode, IPathItem {
     }
 
     public int usedChannels() {
-        return this.lastUsedChannels;
+        return this.usedChannels;
     }
 
     Class<? extends IGridHost> getMachineClass() {
@@ -545,17 +545,13 @@ public class GridNode implements IGridNode, IPathItem {
             return;
         }
 
-        if (this.getLastUsedChannels() != this.getUsedChannels()) {
+        if (this.lastUsedChannels != this.usedChannels) {
             this.lastUsedChannels = this.usedChannels;
 
             if (this.getInternalGrid() != null) {
                 this.getInternalGrid().postEventTo(this, EVENT);
             }
         }
-    }
-
-    private int getLastUsedChannels() {
-        return this.lastUsedChannels;
     }
 
     public long getLastSecurityKey() {

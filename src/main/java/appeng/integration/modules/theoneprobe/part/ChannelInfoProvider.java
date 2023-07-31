@@ -48,7 +48,7 @@ public class ChannelInfoProvider implements IPartProbInfoProvider {
             if (part.getGridNode().isActive()) {
                 final NBTTagCompound tmp = new NBTTagCompound();
                 part.writeToNBT(tmp);
-                usedChannels = tmp.getByte("usedChannels");
+                usedChannels = tmp.getInteger("usedChannels");
             } else {
                 usedChannels = 0;
             }

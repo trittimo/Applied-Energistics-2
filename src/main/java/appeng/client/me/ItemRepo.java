@@ -104,7 +104,7 @@ public class ItemRepo {
 
     public void setViewCell(final ItemStack[] list) {
         this.myPartitionList = ItemViewCell.createFilter(list);
-        this.updateView();
+        this.changed = true;
     }
 
     public void updateView() {

@@ -570,9 +570,9 @@ public abstract class AEBaseGui extends GuiContainer implements IMTModGuiContain
                     stack = ((SlotME) slot).getAEStack();
 
                     if (stack != null
-                        && action == InventoryAction.PICKUP_OR_SET_DOWN
-                        && (stack.getStackSize() == 0 || GuiScreen.isAltKeyDown())
-                        && player.inventory.getItemStack().isEmpty()) {
+                            && action == InventoryAction.PICKUP_OR_SET_DOWN
+                            && (stack.getStackSize() == 0 || GuiScreen.isAltKeyDown())
+                            && player.inventory.getItemStack().isEmpty()) {
                         action = InventoryAction.AUTO_CRAFT;
                     }
 
@@ -935,6 +935,7 @@ public abstract class AEBaseGui extends GuiContainer implements IMTModGuiContain
                     }
                 } else if (s instanceof AppEngSlot) {
                     AppEngSlot appEngSlot = ((AppEngSlot) s);
+                    if (s.getStack().isEmpty()) return;
                     appEngSlot.setDisplay(true);
                     appEngSlot.setReturnAsSingleStack(true);
 

@@ -646,7 +646,7 @@ public abstract class AEBaseContainer extends Container {
                     if (ais == null) {
                         final InventoryAdaptor ia = new AdaptorItemHandler(new WrapperCursorItemHandler(player.inventory));
 
-                        final ItemStack fail = ia.removeItems(1, extracted.getDefinition(), null);
+                        final ItemStack fail = ia.removeItems(1, extracted.getDefinition(), null, false);
                         if (fail.isEmpty()) {
                             this.getCellInventory().extractItems(extracted, Actionable.MODULATE, this.getActionSource());
                         }

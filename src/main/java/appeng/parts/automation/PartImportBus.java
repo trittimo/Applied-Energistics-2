@@ -101,6 +101,30 @@ public class PartImportBus extends PartSharedItemBus implements IInventoryDestin
     }
 
     @Override
+    public long canInsertWithRemainder(ItemStack stack) {
+        if (stack.isEmpty() || stack.getItem() == Items.AIR) {
+            return 0;
+        }
+
+        try {
+            final IMEMonitor<IAEItemStack> inv = this.getProxy()
+                    .getStorage()
+                    .getInventory(
+                            AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class));
+
+            final IAEItemStack out = inv.injectItems(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class).createStack(stack),
+                    Actionable.SIMULATE,
+                    this.source);
+            if (out == null) {
+                return 0;
+            }
+            return out.getStackSize();
+        } catch (GridAccessException ex) {
+            return stack.getCount();
+        }
+    }
+
+    @Override
     public void getBoxes(final IPartCollisionHelper bch) {
         bch.addBox(6, 6, 11, 10, 10, 13);
         bch.addBox(5, 5, 13, 11, 11, 14);
@@ -193,7 +217,7 @@ public class PartImportBus extends PartSharedItemBus implements IInventoryDestin
         if (this.getInstalledUpgrades(Upgrades.FUZZY) > 0) {
             newItems = myAdaptor.removeSimilarItems(toSend, whatToImport == null ? ItemStack.EMPTY : whatToImport.getDefinition(), fzMode, this);
         } else {
-            newItems = myAdaptor.removeItems(toSend, whatToImport == null ? ItemStack.EMPTY : whatToImport.getDefinition(), this);
+            newItems = myAdaptor.removeItems(toSend, whatToImport == null ? ItemStack.EMPTY : whatToImport.getDefinition(), this, true);
         }
 
         if (!newItems.isEmpty()) {
@@ -231,11 +255,36 @@ public class PartImportBus extends PartSharedItemBus implements IInventoryDestin
 
         final IAEItemStack itemAmountNotStorable;
         final ItemStack simResult;
+
+        IInventoryDestination destinationFilter = new IInventoryDestination() {
+            @Override
+            public boolean canInsert(ItemStack stack) {
+                if (stack == null) return false;
+                IAEItemStack itemsNotAdded = inv.injectItems(AEItemStack.fromItemStack(stack), Actionable.SIMULATE, PartImportBus.this.source);
+                // If the amount of items not added is equal to the size of the incoming item stack, we weren't able to insert this stack into the network
+                if (itemsNotAdded == null) {
+                    return true;
+                }
+                return itemsNotAdded.getStackSize() != stack.getCount();
+            }
+
+            @Override
+            public long canInsertWithRemainder(ItemStack stack) {
+                if (stack == null || stack.isEmpty()) return 0;
+                IAEItemStack itemsNotAdded = inv.injectItems(AEItemStack.fromItemStack(stack), Actionable.SIMULATE, PartImportBus.this.source);
+                // If the amount of items not added is equal to the size of the incoming item stack, we weren't able to insert this stack into the network
+                if (itemsNotAdded == null) {
+                    return 0;
+                }
+                return itemsNotAdded.getStackSize();
+            }
+        };
+
         if (this.getInstalledUpgrades(Upgrades.FUZZY) > 0) {
-            simResult = myAdaptor.simulateSimilarRemove(toSend, itemStackToImport, fzMode, null);
+            simResult = myAdaptor.simulateSimilarRemove(toSend, itemStackToImport, fzMode, destinationFilter);
             itemAmountNotStorable = inv.injectItems(AEItemStack.fromItemStack(simResult), Actionable.SIMULATE, this.source);
         } else {
-            simResult = myAdaptor.simulateRemove(toSend, itemStackToImport, null);
+            simResult = myAdaptor.simulateRemove(toSend, itemStackToImport, destinationFilter, true);
             itemAmountNotStorable = inv.injectItems(AEItemStack.fromItemStack(simResult), Actionable.SIMULATE, this.source);
         }
 

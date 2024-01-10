@@ -543,6 +543,15 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
         return out.getStackSize() != stack.getCount();
     }
 
+    @Override
+    public long canInsertWithRemainder(ItemStack stack) {
+        final IAEItemStack remainingItems = this.destination.injectItems(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class).createStack(stack), Actionable.SIMULATE, null);
+        if (remainingItems == null) {
+            return 0;
+        }
+        return remainingItems.getStackSize();
+    }
+
     public IItemHandler getConfig() {
         return this.config;
     }
@@ -752,7 +761,7 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
 
                 // make sure strange things didn't happen...
                 // TODO: check if OK
-                final ItemStack canExtract = adaptor.simulateRemove((int) diff, toStore.getDefinition(), null);
+                final ItemStack canExtract = adaptor.simulateRemove((int) diff, toStore.getDefinition(), null, false);
                 if (canExtract.isEmpty()) {
                     changed = true;
                     throw new GridAccessException();
@@ -767,7 +776,7 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
                 if (diff != 0) {
                     // extract items!
                     changed = true;
-                    final ItemStack removed = adaptor.removeItems((int) diff, ItemStack.EMPTY, null);
+                    final ItemStack removed = adaptor.removeItems((int) diff, ItemStack.EMPTY, null, false);
                     if (removed.isEmpty()) {
                         throw new IllegalStateException("bad attempt at managing inventory. ( removeItems )");
                     }

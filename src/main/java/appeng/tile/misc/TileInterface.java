@@ -197,6 +197,11 @@ public class TileInterface extends AENetworkInvTile implements IGridTickable, II
     }
 
     @Override
+    public long canInsertWithRemainder(ItemStack stack) {
+        return this.duality.canInsertWithRemainder(stack);
+    }
+
+    @Override
     public IItemHandler getInventoryByName(final String name) {
         return this.duality.getInventoryByName(name);
     }

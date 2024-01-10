@@ -25,6 +25,7 @@ import appeng.util.Platform;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 
+import javax.annotation.Nullable;
 import java.util.Iterator;
 
 
@@ -40,83 +41,75 @@ public class AdaptorItemHandler extends InventoryAdaptor {
         return this.itemHandler.getSlots() > 0;
     }
 
-    @Override
-    public ItemStack removeItems(int amount, ItemStack filter, IInventoryDestination destination) {
-        int slots = this.itemHandler.getSlots();
-        ItemStack rv = ItemStack.EMPTY;
+    private ItemStack removeItems(int amount, @Nullable ItemStack filter, @Nullable IInventoryDestination destination, boolean findFirstAcceptableItem, boolean simulateOnly) {
+        if (amount <= 0) {
+            return ItemStack.EMPTY;
+        }
 
+        int slots = this.itemHandler.getSlots();
+
+        ItemStack extracted = ItemStack.EMPTY;
         for (int slot = 0; slot < slots && amount > 0; slot++) {
-            final ItemStack is = this.itemHandler.getStackInSlot(slot);
-            if (is.isEmpty() || (!filter.isEmpty() && !Platform.itemComparisons().isSameItem(is, filter))) {
+            final ItemStack stack = this.itemHandler.getStackInSlot(slot);
+            final int stackSize = stack.getCount();
+            if (stack.isEmpty() || (filter != null && !filter.isEmpty() && !Platform.itemComparisons().isSameItem(stack, filter))) {
                 continue;
             }
 
-            if (destination != null) {
-                if (!destination.canInsert(is)) {
-                    break;
-                }
+            int targetRemainder = destination == null ? stackSize : (int)destination.canInsertWithRemainder(stack);
 
-                ItemStack extracted = this.itemHandler.extractItem(slot, amount, true);
-                if (extracted.isEmpty()) {
+            // If we have a destination inventory and we aren't able to insert into it
+            if (targetRemainder == stackSize) {
+                // Keep looking if the boolean indicator tells us we should
+                if (findFirstAcceptableItem) {
+                    continue;
+                }
+                // Otherwise just stop looking on this item
+                break;
+            }
+
+            // Simulate the extraction first so we don't attempt to extract something that can't be extracted
+            // If we have too many items, subtract off the stuff we can't send over, otherwise just send the amount
+            final int amountToExtract = amount > targetRemainder ? amount - targetRemainder : amount;
+
+            ItemStack simulatedExtract = this.itemHandler.extractItem(slot, amountToExtract, true);
+            if (simulatedExtract.isEmpty()) {
+                // Item handler tells us we can't extract the current item, so keep moving along
+                continue;
+            }
+
+            ItemStack currentExtraction = simulatedExtract;
+            if (!simulateOnly) {
+                // If we're not simulating, go ahead and actually extract the item
+                currentExtraction = this.itemHandler.extractItem(slot, amountToExtract, false);
+                if (currentExtraction.isEmpty()) {
                     continue;
                 }
             }
 
-            // Attempt extracting it
-            ItemStack extracted = this.itemHandler.extractItem(slot, amount, false);
 
             if (extracted.isEmpty()) {
-                continue;
-            }
-
-            if (rv.isEmpty()) {
                 // Use the first stack as a template for the result
-                rv = extracted;
-                filter = extracted;
-                amount -= extracted.getCount();
+                extracted = currentExtraction;
+                filter = currentExtraction;
             } else {
                 // Subsequent stacks will just increase the extracted size
-                rv.grow(extracted.getCount());
-                amount -= extracted.getCount();
+                extracted.grow(currentExtraction.getCount());
             }
+            amount -= currentExtraction.getCount();
         }
 
-        return rv;
+        return extracted;
     }
 
     @Override
-    public ItemStack simulateRemove(int amount, ItemStack filter, IInventoryDestination destination) {
-        int slots = this.itemHandler.getSlots();
-        ItemStack rv = ItemStack.EMPTY;
+    public ItemStack removeItems(int amount, @Nullable ItemStack filter, @Nullable IInventoryDestination destination, boolean findFirstAcceptableItem) {
+        return removeItems(amount, filter, destination, findFirstAcceptableItem, false);
+    }
 
-        for (int slot = 0; slot < slots && amount > 0; slot++) {
-            final ItemStack is = this.itemHandler.getStackInSlot(slot);
-            if (!is.isEmpty() && (filter.isEmpty() || Platform.itemComparisons().isSameItem(is, filter))) {
-                if (destination != null) {
-                    if (!destination.canInsert(is)) {
-                        break;
-                    }
-                }
-
-                ItemStack extracted = this.itemHandler.extractItem(slot, amount, true);
-                if (extracted.isEmpty()) {
-                    continue;
-                }
-
-                if (rv.isEmpty()) {
-                    // Use the first stack as a template for the result
-                    rv = extracted.copy();
-                    filter = extracted;
-                    amount -= extracted.getCount();
-                } else {
-                    // Subsequent stacks will just increase the extracted size
-                    rv.grow(extracted.getCount());
-                    amount -= extracted.getCount();
-                }
-            }
-        }
-
-        return rv;
+    @Override
+    public ItemStack simulateRemove(int amount, @Nullable ItemStack filter, IInventoryDestination destination, boolean findFirstAcceptableItem) {
+        return removeItems(amount, filter, destination, findFirstAcceptableItem, true);
     }
 
     /**

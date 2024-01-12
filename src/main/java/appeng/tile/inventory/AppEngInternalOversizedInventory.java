@@ -10,8 +10,7 @@ import appeng.api.storage.channels.IItemStorageChannel;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.helpers.DualityInterface;
 import appeng.util.ConfigManager;
-import appeng.util.inv.IAEAppEngInventory;
-import appeng.util.inv.filter.IAEItemFilter;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.items.ItemHandlerHelper;
 
@@ -23,6 +22,7 @@ public class AppEngInternalOversizedInventory extends AppEngInternalInventory {
     private final ConfigManager cm;
     private IMEInventory<IAEItemStack> network = null;
     private IActionSource networkSource = null;
+    public boolean needsNetwork = true;
 
     public AppEngInternalOversizedInventory(DualityInterface inventory, int numberOfStorageSlots, int maxStack, ConfigManager cm) {
         super(inventory, numberOfStorageSlots, maxStack);
@@ -32,17 +32,18 @@ public class AppEngInternalOversizedInventory extends AppEngInternalInventory {
     public void assignNetwork(IMEInventory<IAEItemStack> network, IActionSource networkSource) {
         this.network = network;
         this.networkSource = networkSource;
+        this.needsNetwork = false;
     }
 
-    private boolean canInsertIntoNetwork(ItemStack stack) {
+    private ItemStack simulateNetworkInsert(ItemStack stack) {
         if (this.network == null || networkSource == null) {
-            return false;
+            return stack;
         }
         final IAEItemStack out = this.network.injectItems(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class).createStack(stack), Actionable.SIMULATE, networkSource);
         if (out == null) {
-            return true;
+            return ItemStack.EMPTY;
         }
-        return out.getStackSize() != stack.getCount();
+        return out.createItemStack();
     }
 
     private boolean shouldIgnoreNetwork() {
@@ -65,17 +66,16 @@ public class AppEngInternalOversizedInventory extends AppEngInternalInventory {
 
         validateSlotIndex(slot);
 
-        if (!shouldIgnoreNetwork() && !canInsertIntoNetwork(stack)) {
-            return stack;
-        }
 
         ItemStack existing = this.stacks.get(slot);
 
         int limit = maxStack[slot];
 
+
         if (!existing.isEmpty()) {
-            if (!ItemHandlerHelper.canItemStacksStack(stack, existing))
+            if (!ItemHandlerHelper.canItemStacksStack(stack, existing)) {
                 return stack;
+            }
 
             limit -= existing.getCount();
         }
@@ -83,18 +83,50 @@ public class AppEngInternalOversizedInventory extends AppEngInternalInventory {
         if (limit <= 0)
             return stack;
 
+
         boolean reachedLimit = stack.getCount() > limit;
+        ItemStack largestRemainder = reachedLimit ? ItemHandlerHelper.copyStackWithSize(stack, stack.getCount() - limit) : ItemStack.EMPTY;
+
+        if (!shouldIgnoreNetwork()) {
+            if (slot > 0) {
+                // If we're checking anything other than slot 0, tell the caller we can't accept any items
+                // Otherwise we could get into a weird scenario where it tries to fill the other slots with partial stacks
+                return stack;
+            }
+
+            // We can't guarantee that if there are multiple different types of items in the interface that we will still
+            // be able to insert items into the network, even if we could theoretically stack the incoming item with one
+            // already existing in the interface. Easier to just tell the caller we can't accept items at all if the
+            // interface has stuff in it, even if we could probably write a more complicated solve that would allow us to
+            // check that the interface only has one type of item in it
+            // The other option would be to create a simulated network insert that had a 'begin' and 'end' where
+            // You can calculate what the network would look like after inserting multiple different kinds of stacks,
+            // but that would probably be messy and not super performance friendly
+            for (ItemStack currentStack : this.stacks) {
+                if (currentStack != null && currentStack.getCount() > 0) {
+                    return stack;
+                }
+            }
+
+            ItemStack networkInsertRemainder = simulateNetworkInsert(stack);
+            if (networkInsertRemainder.getCount() > largestRemainder.getCount()) { // The network can't some portion of the incoming items
+                largestRemainder = networkInsertRemainder;
+            }
+        }
+
+        if (largestRemainder.getCount() >= stack.getCount()) {
+            // Can't insert anything - either network is full or the interface is
+            return stack;
+        }
+
+        ItemStack finalStack = ItemHandlerHelper.copyStackWithSize(stack, existing.getCount() + stack.getCount() - largestRemainder.getCount());
 
         if (!simulate) {
-            if (existing.isEmpty()) {
-                this.stacks.set(slot, reachedLimit ? ItemHandlerHelper.copyStackWithSize(stack, limit) : stack);
-            } else {
-                existing.grow(reachedLimit ? limit : stack.getCount());
-            }
+            this.stacks.set(slot, finalStack);
             onContentsChanged(slot);
         }
 
-        return reachedLimit ? ItemHandlerHelper.copyStackWithSize(stack, stack.getCount() - limit) : ItemStack.EMPTY;
+        return finalStack.getCount() == 0 ? ItemStack.EMPTY : largestRemainder ;
     }
 
     @Override

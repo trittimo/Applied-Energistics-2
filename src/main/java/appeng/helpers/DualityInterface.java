@@ -727,6 +727,15 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
     private boolean updateStorage() {
         boolean didSomething = false;
 
+        if (this.storage.needsNetwork) {
+            try {
+                this.destination = this.gridProxy.getStorage().getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class));
+                this.storage.assignNetwork(destination, interfaceRequestSource);
+            } catch (final GridAccessException e) {
+                // Nothing we can do about this
+            }
+        }
+
         for (int x = 0; x < NUMBER_OF_STORAGE_SLOTS; x++) {
             if (this.requireWork[x] != null) {
                 didSomething = this.usePlan(x, this.requireWork[x]) || didSomething;

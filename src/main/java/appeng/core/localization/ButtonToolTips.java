@@ -43,6 +43,11 @@ public enum ButtonToolTips {
 
     InterfaceBlockingMode,
     InterfaceCraftingMode,
+
+    InterfaceInsertionMode,
+    AllowFullInsertion,
+    BlockFullInsertion,
+
     Trash,
     MatterBalls,
 

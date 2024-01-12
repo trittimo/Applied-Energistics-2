@@ -142,6 +142,7 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
         this.upgrades = new StackUpgradeInventory(this.gridProxy.getMachineRepresentation(), this, 4);
         this.cm.registerSetting(Settings.BLOCK, YesNo.NO);
         this.cm.registerSetting(Settings.INTERFACE_TERMINAL, YesNo.YES);
+        this.cm.registerSetting(Settings.INTERFACE_ALWAYS_ALLOW_INSERTION, YesNo.YES);
 
         this.iHost = ih;
         this.craftingTracker = new MultiCraftingTracker(this.iHost, 9);

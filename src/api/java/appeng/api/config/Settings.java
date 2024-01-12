@@ -58,6 +58,7 @@ public enum Settings
 	IO_DIRECTION( EnumSet.of( RelativeDirection.LEFT, RelativeDirection.RIGHT ) ),
 
 	BLOCK( EnumSet.of( YesNo.YES, YesNo.NO ) ),
+	INTERFACE_ALWAYS_ALLOW_INSERTION( EnumSet.of( YesNo.YES, YesNo.NO ) ),
 
 	OPERATION_MODE( EnumSet.allOf( OperationMode.class ) ),
 

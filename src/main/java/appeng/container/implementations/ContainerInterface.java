@@ -42,6 +42,9 @@ public class ContainerInterface extends ContainerUpgradeable implements IOptiona
     @GuiSync(4)
     public YesNo iTermMode = YesNo.YES;
 
+    @GuiSync(5)
+    public YesNo insertionMode = YesNo.YES;
+
     @GuiSync(7)
     public int patternExpansions = 0;
 
@@ -108,6 +111,7 @@ public class ContainerInterface extends ContainerUpgradeable implements IOptiona
     protected void loadSettingsFromHost(final IConfigManager cm) {
         this.setBlockingMode((YesNo) cm.getSetting(Settings.BLOCK));
         this.setInterfaceTerminalMode((YesNo) cm.getSetting(Settings.INTERFACE_TERMINAL));
+        this.setInsertionMode((YesNo) cm.getSetting(Settings.INTERFACE_ALWAYS_ALLOW_INSERTION));
     }
 
     public YesNo getBlockingMode() {
@@ -118,8 +122,16 @@ public class ContainerInterface extends ContainerUpgradeable implements IOptiona
         this.bMode = bMode;
     }
 
+    private void setInsertionMode(final YesNo mode) {
+        this.insertionMode = mode;
+    }
+
     public YesNo getInterfaceTerminalMode() {
         return this.iTermMode;
+    }
+
+    public YesNo getInsertionMode() {
+        return this.insertionMode;
     }
 
     private void setInterfaceTerminalMode(final YesNo iTermMode) {

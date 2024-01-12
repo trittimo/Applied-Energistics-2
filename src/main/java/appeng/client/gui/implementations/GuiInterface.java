@@ -41,7 +41,8 @@ import java.io.IOException;
 public class GuiInterface extends GuiUpgradeable {
 
     private GuiTabButton priority;
-    private GuiImgButton BlockMode;
+    private GuiImgButton blockMode;
+    private GuiImgButton insertionMode;
     private GuiToggleButton interfaceMode;
 
     public GuiInterface(final InventoryPlayer inventoryPlayer, final IInterfaceHost te) {
@@ -54,17 +55,24 @@ public class GuiInterface extends GuiUpgradeable {
         this.priority = new GuiTabButton(this.guiLeft + 154, this.guiTop, 2 + 4 * 16, GuiText.Priority.getLocal(), this.itemRender);
         this.buttonList.add(this.priority);
 
-        this.BlockMode = new GuiImgButton(this.guiLeft - 18, this.guiTop + 8, Settings.BLOCK, YesNo.NO);
-        this.buttonList.add(this.BlockMode);
+        this.blockMode = new GuiImgButton(this.guiLeft - 18, this.guiTop + 8, Settings.BLOCK, YesNo.NO);
+        this.buttonList.add(this.blockMode);
 
         this.interfaceMode = new GuiToggleButton(this.guiLeft - 18, this.guiTop + 26, 84, 85, GuiText.InterfaceTerminal.getLocal(), GuiText.InterfaceTerminalHint.getLocal());
         this.buttonList.add(this.interfaceMode);
+
+        this.insertionMode = new GuiImgButton(this.guiLeft - 18, this.guiTop + 44, Settings.INTERFACE_ALWAYS_ALLOW_INSERTION, YesNo.YES);
+        this.buttonList.add(this.insertionMode);
     }
 
     @Override
     public void drawFG(final int offsetX, final int offsetY, final int mouseX, final int mouseY) {
-        if (this.BlockMode != null) {
-            this.BlockMode.set(((ContainerInterface) this.cvb).getBlockingMode());
+        if (this.blockMode != null) {
+            this.blockMode.set(((ContainerInterface) this.cvb).getBlockingMode());
+        }
+
+        if (this.insertionMode != null) {
+            this.insertionMode.set(((ContainerInterface) this.cvb).getInsertionMode());
         }
 
         if (this.interfaceMode != null) {
@@ -103,8 +111,12 @@ public class GuiInterface extends GuiUpgradeable {
             NetworkHandler.instance().sendToServer(new PacketConfigButton(Settings.INTERFACE_TERMINAL, backwards));
         }
 
-        if (btn == this.BlockMode) {
-            NetworkHandler.instance().sendToServer(new PacketConfigButton(this.BlockMode.getSetting(), backwards));
+        if (btn == this.blockMode) {
+            NetworkHandler.instance().sendToServer(new PacketConfigButton(this.blockMode.getSetting(), backwards));
+        }
+
+        if (btn == this.insertionMode) {
+            NetworkHandler.instance().sendToServer(new PacketConfigButton(this.insertionMode.getSetting(), backwards));
         }
     }
 

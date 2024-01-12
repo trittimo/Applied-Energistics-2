@@ -42,7 +42,7 @@ public class ContainerInterface extends ContainerUpgradeable implements IOptiona
     @GuiSync(4)
     public YesNo iTermMode = YesNo.YES;
 
-    @GuiSync(5)
+    @GuiSync(100)
     public YesNo insertionMode = YesNo.YES;
 
     @GuiSync(7)

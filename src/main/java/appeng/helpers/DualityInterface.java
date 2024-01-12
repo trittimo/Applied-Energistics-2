@@ -117,8 +117,9 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
     private final IActionSource mySource;
     private final IActionSource interfaceRequestSource;
     private final ConfigManager cm = new ConfigManager(this);
+    private IMEInventory<IAEItemStack> destination;
     private final AppEngInternalAEInventory config = new AppEngInternalAEInventory(this, NUMBER_OF_CONFIG_SLOTS, 512);
-    private final AppEngInternalInventory storage = new AppEngInternalOversizedInventory(this, NUMBER_OF_STORAGE_SLOTS, 512);
+    private final AppEngInternalOversizedInventory storage = new AppEngInternalOversizedInventory(this, NUMBER_OF_STORAGE_SLOTS, 512, cm);
     private final AppEngInternalInventory patterns = new AppEngInternalInventory(this, NUMBER_OF_PATTERN_SLOTS, 1);
     private final MEMonitorPassThrough<IAEItemStack> items = new MEMonitorPassThrough<>(new NullInventory<IAEItemStack>(), AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class));
     private final MEMonitorPassThrough<IAEFluidStack> fluids = new MEMonitorPassThrough<>(new NullInventory<IAEFluidStack>(), AEApi.instance().storage().getStorageChannel(IFluidStorageChannel.class));
@@ -128,7 +129,6 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
     private int priority;
     private List<ICraftingPatternDetails> craftingList = null;
     private List<ItemStack> waitingToSend = null;
-    private IMEInventory<IAEItemStack> destination;
     private int isWorking = -1;
     private EnumSet<EnumFacing> visitedFaces = EnumSet.noneOf(EnumFacing.class);
     private EnumMap<EnumFacing, List<ItemStack>> waitingToSendFacing = new EnumMap<>(EnumFacing.class);
@@ -743,6 +743,7 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
         boolean changed = false;
         try {
             this.destination = this.gridProxy.getStorage().getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class));
+            this.storage.assignNetwork(destination, interfaceRequestSource);
             final IEnergySource src = this.gridProxy.getEnergy();
 
             if (itemStack.getStackSize() < 0) {

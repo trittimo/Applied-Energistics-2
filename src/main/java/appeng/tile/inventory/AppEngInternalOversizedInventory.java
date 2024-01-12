@@ -1,5 +1,15 @@
 package appeng.tile.inventory;
 
+import appeng.api.AEApi;
+import appeng.api.config.Actionable;
+import appeng.api.config.Settings;
+import appeng.api.config.YesNo;
+import appeng.api.networking.security.IActionSource;
+import appeng.api.storage.IMEInventory;
+import appeng.api.storage.channels.IItemStorageChannel;
+import appeng.api.storage.data.IAEItemStack;
+import appeng.helpers.DualityInterface;
+import appeng.util.ConfigManager;
 import appeng.util.inv.IAEAppEngInventory;
 import appeng.util.inv.filter.IAEItemFilter;
 import net.minecraft.item.ItemStack;
@@ -10,16 +20,33 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 
 public class AppEngInternalOversizedInventory extends AppEngInternalInventory {
-    public AppEngInternalOversizedInventory(IAEAppEngInventory inventory, int size, int maxStack, IAEItemFilter filter) {
-        super(inventory, size, maxStack, filter);
+    private final ConfigManager cm;
+    private IMEInventory<IAEItemStack> network = null;
+    private IActionSource networkSource = null;
+
+    public AppEngInternalOversizedInventory(DualityInterface inventory, int numberOfStorageSlots, int maxStack, ConfigManager cm) {
+        super(inventory, numberOfStorageSlots, maxStack);
+        this.cm = cm;
     }
 
-    public AppEngInternalOversizedInventory(IAEAppEngInventory inventory, int size, int maxStack) {
-        super(inventory, size, maxStack);
+    public void assignNetwork(IMEInventory<IAEItemStack> network, IActionSource networkSource) {
+        this.network = network;
+        this.networkSource = networkSource;
     }
 
-    public AppEngInternalOversizedInventory(IAEAppEngInventory inventory, int size) {
-        super(inventory, size);
+    private boolean canInsertIntoNetwork(ItemStack stack) {
+        if (this.network == null || networkSource == null) {
+            return false;
+        }
+        final IAEItemStack out = this.network.injectItems(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class).createStack(stack), Actionable.SIMULATE, networkSource);
+        if (out == null) {
+            return true;
+        }
+        return out.getStackSize() != stack.getCount();
+    }
+
+    private boolean shouldIgnoreNetwork() {
+        return this.cm.getSetting(Settings.INTERFACE_ALWAYS_ALLOW_INSERTION) == YesNo.YES;
     }
 
     @Override
@@ -37,6 +64,10 @@ public class AppEngInternalOversizedInventory extends AppEngInternalInventory {
             return ItemStack.EMPTY;
 
         validateSlotIndex(slot);
+
+        if (!shouldIgnoreNetwork() && !canInsertIntoNetwork(stack)) {
+            return stack;
+        }
 
         ItemStack existing = this.stacks.get(slot);
 

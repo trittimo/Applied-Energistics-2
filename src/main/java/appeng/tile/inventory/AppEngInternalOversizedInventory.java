@@ -22,17 +22,19 @@ public class AppEngInternalOversizedInventory extends AppEngInternalInventory {
     private final ConfigManager cm;
     private IMEInventory<IAEItemStack> network = null;
     private IActionSource networkSource = null;
-    public boolean needsNetwork = true;
 
     public AppEngInternalOversizedInventory(DualityInterface inventory, int numberOfStorageSlots, int maxStack, ConfigManager cm) {
         super(inventory, numberOfStorageSlots, maxStack);
         this.cm = cm;
     }
 
+    public boolean needsNetwork() {
+        return this.network == null || this.networkSource == null;
+    }
+
     public void assignNetwork(IMEInventory<IAEItemStack> network, IActionSource networkSource) {
         this.network = network;
         this.networkSource = networkSource;
-        this.needsNetwork = false;
     }
 
     private ItemStack simulateNetworkInsert(ItemStack stack) {

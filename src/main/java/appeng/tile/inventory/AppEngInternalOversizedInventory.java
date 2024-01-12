@@ -10,7 +10,6 @@ import appeng.api.storage.channels.IItemStorageChannel;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.helpers.DualityInterface;
 import appeng.util.ConfigManager;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.items.ItemHandlerHelper;
 
@@ -20,12 +19,14 @@ import java.util.function.Consumer;
 
 public class AppEngInternalOversizedInventory extends AppEngInternalInventory {
     private final ConfigManager cm;
+    private AppEngInternalAEInventory config;
     private IMEInventory<IAEItemStack> network = null;
     private IActionSource networkSource = null;
 
-    public AppEngInternalOversizedInventory(DualityInterface inventory, int numberOfStorageSlots, int maxStack, ConfigManager cm) {
+    public AppEngInternalOversizedInventory(DualityInterface inventory, int numberOfStorageSlots, int maxStack, ConfigManager cm, AppEngInternalAEInventory config) {
         super(inventory, numberOfStorageSlots, maxStack);
         this.cm = cm;
+        this.config = config;
     }
 
     public boolean needsNetwork() {
@@ -50,6 +51,14 @@ public class AppEngInternalOversizedInventory extends AppEngInternalInventory {
 
     private boolean shouldIgnoreNetwork() {
         return this.cm.getSetting(Settings.INTERFACE_ALWAYS_ALLOW_INSERTION) == YesNo.YES;
+    }
+
+    private boolean isConfigSlot(int slot) {
+        if (this.config == null) {
+            return false; // Should never happen
+        }
+
+        return this.config.getStackInSlot(slot).getCount() > 0;
     }
 
     @Override
@@ -89,7 +98,7 @@ public class AppEngInternalOversizedInventory extends AppEngInternalInventory {
         boolean reachedLimit = stack.getCount() > limit;
         ItemStack largestRemainder = reachedLimit ? ItemHandlerHelper.copyStackWithSize(stack, stack.getCount() - limit) : ItemStack.EMPTY;
 
-        if (!shouldIgnoreNetwork()) {
+        if (!shouldIgnoreNetwork() && !isConfigSlot(slot)) {
             if (slot > 0) {
                 // If we're checking anything other than slot 0, tell the caller we can't accept any items
                 // Otherwise we could get into a weird scenario where it tries to fill the other slots with partial stacks
@@ -104,8 +113,10 @@ public class AppEngInternalOversizedInventory extends AppEngInternalInventory {
             // The other option would be to create a simulated network insert that had a 'begin' and 'end' where
             // You can calculate what the network would look like after inserting multiple different kinds of stacks,
             // but that would probably be messy and not super performance friendly
-            for (ItemStack currentStack : this.stacks) {
-                if (currentStack != null && currentStack.getCount() > 0) {
+            for (int i = 0; i < this.stacks.size(); i++) {
+                ItemStack currentStack = this.stacks.get(i);
+                if (isConfigSlot(i)) continue; // Ignore config slots - they're the exception to the rule
+                if (currentStack.getCount() > 0) {
                     return stack;
                 }
             }

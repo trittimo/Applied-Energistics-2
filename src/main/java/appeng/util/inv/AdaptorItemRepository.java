@@ -6,6 +6,7 @@ import appeng.util.Platform;
 import com.jaquadro.minecraft.storagedrawers.api.capabilities.IItemRepository;
 import net.minecraft.item.ItemStack;
 
+import javax.annotation.Nullable;
 import java.util.Iterator;
 
 
@@ -17,16 +18,18 @@ public class AdaptorItemRepository extends InventoryAdaptor {
     }
 
     @Override
-    public ItemStack removeItems(int amount, ItemStack filter, IInventoryDestination destination) {
-        ItemStack rv = ItemStack.EMPTY;
+    public ItemStack removeItems(int amount, ItemStack filter, IInventoryDestination destination, boolean findFirstAcceptableItem) {
         ItemStack extracted = ItemStack.EMPTY;
 
-        if (!filter.isEmpty()) {
+        if (filter != null && !filter.isEmpty()) {
             extracted = this.itemRepository.extractItem(filter, amount, true);
         } else {
             for (IItemRepository.ItemRecord record : this.itemRepository.getAllItems()) {
                 extracted = this.itemRepository.extractItem(record.itemPrototype, amount, true);
                 if (!extracted.isEmpty()) {
+                    if (findFirstAcceptableItem && !destination.canInsert(extracted)) {
+                        continue;
+                    }
                     break;
                 }
             }
@@ -35,7 +38,7 @@ public class AdaptorItemRepository extends InventoryAdaptor {
         if (destination != null) {
 
             if (extracted.isEmpty() || !destination.canInsert(extracted)) {
-                return rv;
+                return ItemStack.EMPTY;
             }
 
         }
@@ -46,7 +49,7 @@ public class AdaptorItemRepository extends InventoryAdaptor {
     }
 
     @Override
-    public ItemStack simulateRemove(int amount, ItemStack filter, IInventoryDestination destination) {
+    public ItemStack simulateRemove(int amount, @Nullable ItemStack filter, IInventoryDestination destination, boolean findFirstAcceptableItem) {
         ItemStack rv = ItemStack.EMPTY;
         ItemStack extracted = ItemStack.EMPTY;
 

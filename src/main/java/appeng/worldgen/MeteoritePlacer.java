@@ -239,7 +239,7 @@ public final class MeteoritePlacer {
                         }
 
                         if (!toAdd.isEmpty()) {
-                            if (ap.simulateRemove(1, toAdd, null).isEmpty()) {
+                            if (ap.simulateRemove(1, toAdd, null, false).isEmpty()) {
                                 ap.addItems(toAdd);
                             } else {
                                 duplicate = true;

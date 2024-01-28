@@ -95,9 +95,9 @@ public class MEMonitorIInventory implements IMEMonitor<IAEItemStack>, ITickingMo
         ItemStack out = ItemStack.EMPTY;
 
         if (type == Actionable.SIMULATE) {
-            out = this.adaptor.simulateRemove((int) request.getStackSize(), request.getDefinition(), null);
+            out = this.adaptor.simulateRemove((int) request.getStackSize(), request.getDefinition(), null, false);
         } else {
-            out = this.adaptor.removeItems((int) request.getStackSize(), request.getDefinition(), null);
+            out = this.adaptor.removeItems((int) request.getStackSize(), request.getDefinition(), null, false);
         }
 
         if (out.isEmpty()) {

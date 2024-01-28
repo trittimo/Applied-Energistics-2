@@ -48,4 +48,18 @@ public class IMEInventoryDestination implements IInventoryDestination {
         }
         return failed.getStackSize() != stack.getCount();
     }
+
+    @Override
+    public long canInsertWithRemainder(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return 0;
+        }
+
+        final IAEItemStack itemsNotAdded = this.me.injectItems(AEItemStack.fromItemStack(stack), Actionable.SIMULATE, null);
+        if (itemsNotAdded == null) {
+            return 0;
+        }
+
+        return itemsNotAdded.getStackSize();
+    }
 }

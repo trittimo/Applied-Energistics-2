@@ -255,7 +255,7 @@ public final class ContainerInterfaceTerminal extends AEBaseContainer {
                             }
                         }
                         if (canInsert) {
-                            ItemStack extra = playerHand.removeItems(1, ItemStack.EMPTY, null);
+                            ItemStack extra = playerHand.removeItems(1, ItemStack.EMPTY, null, false);
                             if (!extra.isEmpty() && !interfaceSlot.containsItems()) {
                                 extra = interfaceSlot.addItems(extra);
                             }
@@ -264,7 +264,7 @@ public final class ContainerInterfaceTerminal extends AEBaseContainer {
                             }
                         }
                     } else if (!is.isEmpty()) {
-                        ItemStack extra = interfaceSlot.removeItems((is.getCount() + 1) / 2, ItemStack.EMPTY, null);
+                        ItemStack extra = interfaceSlot.removeItems((is.getCount() + 1) / 2, ItemStack.EMPTY, null, false);
                         if (!extra.isEmpty()) {
                             extra = playerHand.addItems(extra);
                         }

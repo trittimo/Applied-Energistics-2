@@ -32,6 +32,7 @@ import appeng.util.item.AEItemStack;
 import com.google.common.collect.ImmutableList;
 import net.minecraft.item.ItemStack;
 
+import javax.annotation.Nullable;
 import java.util.Iterator;
 
 
@@ -61,17 +62,29 @@ public class IMEAdaptor extends InventoryAdaptor {
     }
 
     @Override
-    public ItemStack removeItems(final int amount, final ItemStack filter, final IInventoryDestination destination) {
-        return this.doRemoveItems(amount, filter, destination, Actionable.MODULATE);
+    public ItemStack removeItems(int amount, ItemStack filter, IInventoryDestination destination, boolean findFirstAcceptableItem) {
+        return this.doRemoveItems(amount, filter, destination, Actionable.MODULATE, findFirstAcceptableItem);
     }
 
     private ItemStack doRemoveItems(final int amount, final ItemStack filter, final IInventoryDestination destination, final Actionable type) {
+        return doRemoveItems(amount, filter, destination, type, false);
+    }
+
+    private ItemStack doRemoveItems(final int amount, final ItemStack filter, final IInventoryDestination destination, final Actionable type, final boolean findFirstAcceptableItem) {
         IAEItemStack req = null;
 
         if (filter.isEmpty()) {
             final IItemList<IAEItemStack> list = this.getList();
             if (!list.isEmpty()) {
-                req = list.getFirstItem();
+                if (findFirstAcceptableItem) {
+                    for (IAEItemStack stack : list) {
+                        if (stack != null && destination.canInsert(stack.createItemStack())) {
+                            req = stack;
+                        }
+                    }
+                } else {
+                    req = list.getFirstItem();
+                }
             }
         } else {
             req = AEItemStack.fromItemStack(filter);
@@ -92,8 +105,8 @@ public class IMEAdaptor extends InventoryAdaptor {
     }
 
     @Override
-    public ItemStack simulateRemove(final int amount, final ItemStack filter, final IInventoryDestination destination) {
-        return this.doRemoveItems(amount, filter, destination, Actionable.SIMULATE);
+    public ItemStack simulateRemove(int amount, @Nullable ItemStack filter, IInventoryDestination destination, boolean findFirstAcceptableItem) {
+        return this.doRemoveItems(amount, filter, destination, Actionable.SIMULATE, true);
     }
 
     @Override

@@ -177,6 +177,11 @@ public class PartInterface extends PartBasicState implements IGridTickable, ISto
     }
 
     @Override
+    public long canInsertWithRemainder(ItemStack stack) {
+        return this.duality.canInsertWithRemainder(stack);
+    }
+
+    @Override
     public <T extends IAEStack<T>> IMEMonitor<T> getInventory(IStorageChannel<T> channel) {
         return this.duality.getInventory(channel);
     }

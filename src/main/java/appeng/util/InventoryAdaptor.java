@@ -31,6 +31,8 @@ import net.minecraftforge.common.capabilities.CapabilityInject;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
+import javax.annotation.Nullable;
+
 /**
  * Universal Facade for other inventories. Used to conveniently interact with various types of inventories. This is not
  * used for
@@ -67,10 +69,26 @@ public abstract class InventoryAdaptor implements Iterable<ItemSlot> {
         return null;
     }
 
-    // return what was extracted.
-    public abstract ItemStack removeItems(int amount, ItemStack filter, IInventoryDestination destination);
+    /**
+     * NOTE: HAS SIDE EFFECTS. ONLY CALL IF YOU ACTUALLY WANT TO REMOVE ITEMS FROM THE TARGET.<br><br>Removes {@code amount} items, using the given {@code filter} and targeting the given {@code destination}. If {@code findFirstAcceptableItem} is true, this method will continue iterating until it finds an item which is accepted by the {@code destination} inventory.
+     * @param amount The maximum stack size to simulate extraction for
+     * @param filter An ItemStack to filter the inventory on
+     * @param destination An inventory to test insertion into
+     * @param findFirstAcceptableItem Whether we should continue looking through chest slots until we find an acceptable item
+     * @return The first ItemStack which matches the given criteria, or {@code ItemStack.EMPTY} if none matches
+     */
+    public abstract ItemStack removeItems(int amount, @Nullable ItemStack filter, @Nullable IInventoryDestination destination, boolean findFirstAcceptableItem);
 
-    public abstract ItemStack simulateRemove(int amount, ItemStack filter, IInventoryDestination destination);
+    /**
+     * Simulates the removal of {@code amount} items, using the given {@code filter} and targeting the given {@code destination}. If {@code findFirstAcceptableItem} is true, this method will continue iterating until it finds an item which is accepted by the {@code destination} inventory.
+     * @param amount The maximum stack size to simulate extraction for
+     * @param filter An ItemStack to filter the inventory on
+     * @param destination An inventory to test insertion into
+     * @param findFirstAcceptableItem Whether we should continue looking through chest slots until we find an acceptable item
+     * @return The first ItemStack which matches the given criteria, or {@code ItemStack.EMPTY} if none matches
+     */
+
+    public abstract ItemStack simulateRemove(int amount, @Nullable ItemStack filter, @Nullable IInventoryDestination destination, boolean findFirstAcceptableItem);
 
     // return what was extracted.
     public abstract ItemStack removeSimilarItems(int amount, ItemStack filter, FuzzyMode fuzzyMode, IInventoryDestination destination);

@@ -25,4 +25,11 @@ import net.minecraft.item.ItemStack;
 public interface IInventoryDestination {
 
     boolean canInsert(ItemStack stack);
+
+    /**
+     * Indicates whether the inventory destination in question can insert some amount of the given ItemStack
+     * @param stack The ItemStack to check for insertion
+     * @return How many items will be leftover from the ItemStack after insertion. If 0 then all items will be successfully inserted.
+     */
+    long canInsertWithRemainder(ItemStack stack);
 }

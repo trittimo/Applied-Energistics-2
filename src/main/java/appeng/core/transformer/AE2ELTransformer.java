@@ -24,13 +24,19 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import net.minecraft.launchwrapper.IClassTransformer;
+import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.fml.common.Loader;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,23 +49,29 @@ public class AE2ELTransformer implements IClassTransformer {
 
     @Override
     public byte[] transform(String name, String transformedName, byte[] basicClass) {
-        if (Loader.instance().getIndexedModList().get("stackup") != null) {
-            return basicClass;
-        }
         transformedName = transformedName.replace('/', '.');
 
-        Consumer<ClassNode> consumer = (n) -> {
-        };
+        if ("net.minecraftforge.common.ForgeHooks".equals(transformedName)) {
+            ClassReader cr = new ClassReader(basicClass);
+            ClassWriter cw = new SafeClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+            ClassVisitor cv = new PickBlockPatch(cw);
+            cr.accept(cv, ClassReader.EXPAND_FRAMES);
+            return cw.toByteArray();
+        }
+
+        Consumer<ClassNode> consumer = (n) -> {};
         Consumer<ClassNode> emptyConsumer = consumer;
 
-        if ("net.minecraft.item.ItemStack".equals(transformedName)) {
-            consumer = consumer.andThen(ItemStackPatch::patchCountGetSet);
-        } else if ("net.minecraft.network.PacketBuffer".equals(transformedName)) {
-            consumer = consumer.andThen((node) -> {
-                spliceClasses(node, "appeng.core.transformer.PacketBufferPatch",
-                        "readItemStack", "func_150791_c",
-                        "writeItemStack", "func_150788_a");
-            });
+        if (Loader.instance().getIndexedModList().get("stackup") == null) {
+            if ("net.minecraft.item.ItemStack".equals(transformedName)) {
+                consumer = consumer.andThen(ItemStackPatch::patchCountGetSet);
+            } else if ("net.minecraft.network.PacketBuffer".equals(transformedName)) {
+                consumer = consumer.andThen((node) -> {
+                    spliceClasses(node, "appeng.core.transformer.PacketBufferPatch",
+                            "readItemStack", "func_150791_c",
+                            "writeItemStack", "func_150788_a");
+                });
+            }
         }
 
         if (consumer != emptyConsumer) {
@@ -176,6 +188,41 @@ public class AE2ELTransformer implements IClassTransformer {
                     nodeData.fields.add(mn);
                     added = true;
                 }
+            }
+        }
+
+    }
+
+    private static class SafeClassWriter extends ClassWriter {
+
+        public SafeClassWriter(int flags) {
+            super(flags);
+        }
+
+        @Override
+        protected String getCommonSuperClass(final String type1, final String type2) {
+            Class<?> c, d;
+            // clueless
+            ClassLoader classLoader = Launch.classLoader;
+            try {
+                c = Class.forName(type1.replace('/', '.'), false, classLoader);
+                d = Class.forName(type2.replace('/', '.'), false, classLoader);
+            } catch (Exception e) {
+                throw new RuntimeException(e.toString());
+            }
+            if (c.isAssignableFrom(d)) {
+                return type1;
+            }
+            if (d.isAssignableFrom(c)) {
+                return type2;
+            }
+            if (c.isInterface() || d.isInterface()) {
+                return "java/lang/Object";
+            } else {
+                do {
+                    c = c.getSuperclass();
+                } while (!c.isAssignableFrom(d));
+                return c.getName().replace('.', '/');
             }
         }
 

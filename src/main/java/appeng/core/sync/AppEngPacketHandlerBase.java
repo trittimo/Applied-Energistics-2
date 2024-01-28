@@ -86,7 +86,13 @@ public class AppEngPacketHandlerBase {
 
         PACKET_TERMINAL_KEYBIND(PacketTerminalUse.class),
 
-        PACKET_CRAFTING_TOAST(PacketCraftingToast.class);
+        PACKET_CRAFTING_TOAST(PacketCraftingToast.class),
+
+        PACKET_COLOR_APPLICATOR_SELECT_COLOR(PacketColorApplicatorSelectColor.class),
+
+        PACKET_CABLE_BUS_LANDING_PARTICLE(PacketCableBusLandingParticle.class),
+
+        ;
 
 
         private final Class<? extends AppEngPacket> packetClass;
